@@ -7,11 +7,11 @@
 <script src="https://cdn.jsdelivr.net/npm/libphonenumber-js@1/bundle/libphonenumber-js.min.js"></script>
 <style>
   :root {
-    --blue: #1a73e8;
-    --green: #1e8e3e;
-    --red: #d93025;
-    --border: #dadce0;
-    --bg: #f6f7f9;
+    --blue: #4c9aff;
+    --green: #3ddc84;
+    --red: #ff6b6b;
+    --border: #3a3d42;
+    --bg: #14161a;
   }
   * { box-sizing: border-box; }
   body {
@@ -19,19 +19,19 @@
     background: var(--bg);
     margin: 0;
     padding: 32px 16px;
-    color: #202124;
+    color: #e8eaed;
   }
   .card {
     max-width: 720px;
     margin: 0 auto;
-    background: #fff;
+    background: #1e2126;
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 28px 32px;
   }
-  h1 { font-size: 20px; margin: 0 0 4px; }
-  p.sub { color: #5f6368; margin: 0 0 20px; font-size: 14px; }
-  label { display: block; font-size: 13px; font-weight: 600; margin: 16px 0 6px; }
+  h1 { font-size: 20px; margin: 0 0 4px; color: #f1f3f4; }
+  p.sub { color: #9aa0a6; margin: 0 0 20px; font-size: 14px; }
+  label { display: block; font-size: 13px; font-weight: 600; margin: 16px 0 6px; color: #cfd2d6; }
   textarea {
     width: 100%;
     min-height: 140px;
@@ -41,6 +41,8 @@
     font-family: monospace;
     font-size: 13px;
     resize: vertical;
+    background: #0f1114;
+    color: #e8eaed;
   }
   select {
     width: 100%;
@@ -48,11 +50,12 @@
     border: 1px solid var(--border);
     border-radius: 6px;
     font-size: 14px;
-    background: #fff;
+    background: #0f1114;
+    color: #e8eaed;
   }
   button {
     background: var(--blue);
-    color: #fff;
+    color: #0f1114;
     border: none;
     padding: 10px 18px;
     border-radius: 6px;
@@ -61,9 +64,9 @@
     cursor: pointer;
     margin-top: 18px;
   }
-  button:hover { background: #1558b0; }
+  button:hover { background: #7db4ff; }
   button.secondary {
-    background: #fff;
+    background: transparent;
     color: var(--blue);
     border: 1px solid var(--blue);
     margin-left: 8px;
@@ -79,14 +82,14 @@
     padding: 8px 10px;
     border-bottom: 1px solid var(--border);
   }
-  th { color: #5f6368; font-weight: 600; }
+  th { color: #9aa0a6; font-weight: 600; }
   .valid { color: var(--green); font-weight: 600; }
   .invalid { color: var(--red); font-weight: 600; }
-  .summary { margin-top: 14px; font-size: 13px; color: #5f6368; }
+  .summary { margin-top: 14px; font-size: 13px; color: #9aa0a6; }
   #gate {
     max-width: 360px;
     margin: 80px auto;
-    background: #fff;
+    background: #1e2126;
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 28px;
@@ -99,6 +102,8 @@
     border-radius: 6px;
     margin: 14px 0;
     font-size: 14px;
+    background: #0f1114;
+    color: #e8eaed;
   }
   #gate .err { color: var(--red); font-size: 13px; display: none; }
   #app { display: none; }
