@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phone Number Validator</title>
+<script src="https://cdn.jsdelivr.net/npm/libphonenumber-js@1/bundle/libphonenumber-js.min.js"></script>
+<style>
+  :root {
+    --blue: #1a73e8;
+    --green: #1e8e3e;
+    --red: #d93025;
+    --border: #dadce0;
+    --bg: #f6f7f9;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    margin: 0;
+    padding: 32px 16px;
+    color: #202124;
+  }
+  .card {
+    max-width: 720px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px 32px;
+  }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  p.sub { color: #5f6368; margin: 0 0 20px; font-size: 14px; }
+  label { display: block; font-size: 13px; font-weight: 600; margin: 16px 0 6px; }
+  textarea {
+    width: 100%;
+    min-height: 140px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 13px;
+    resize: vertical;
+  }
+  select {
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    background: #fff;
+  }
+  button {
+    background: var(--blue);
+    color: #fff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 18px;
+  }
+  button:hover { background: #1558b0; }
+  button.secondary {
+    background: #fff;
+    color: var(--blue);
+    border: 1px solid var(--blue);
+    margin-left: 8px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    font-size: 13px;
+  }
+  th, td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  th { color: #5f6368; font-weight: 600; }
+  .valid { color: var(--green); font-weight: 600; }
+  .invalid { color: var(--red); font-weight: 600; }
+  .summary { margin-top: 14px; font-size: 13px; color: #5f6368; }
+  #gate {
+    max-width: 360px;
+    margin: 80px auto;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px;
+    text-align: center;
+  }
+  #gate input {
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin: 14px 0;
+    font-size: 14px;
+  }
+  #gate .err { color: var(--red); font-size: 13px; display: none; }
+  #app { display: none; }
+</style>
+</head>
+<body>
+
+<!-- ============ PASSWORD GATE (NOT real security - see notes) ============ -->
+<div id="gate">
+  <h1>Team access</h1>
+  <p class="sub">Know the phrase? Type it below to continue.</p>
+  <input type="text" id="gate_pw" placeholder="Access phrase" autocomplete="off">
+  <div class="err" id="gate_err">Not quite - try again.</div>
+  <button onclick="tryUnlock()">Continue</button>
+</div>
+
+<!-- ============ MAIN APP ============ -->
+<div id="app">
+  <div class="card">
+    <h1>Phone Number Validator</h1>
+    <p class="sub">Paste numbers below - commas, newlines, tabs or semicolons all work.</p>
+
+    <label for="numbers">Phone numbers</label>
+    <textarea id="numbers" placeholder="+44 7911 123456, 07911123456, +1 415 555 2671 ..."></textarea>
+
+    <label for="defaultCountry">Default country (used only for numbers with no + or 00 prefix)</label>
+    <select id="defaultCountry"></select>
+
+    <div>
+      <button onclick="runValidation()">Check numbers</button>
+      <button class="secondary" onclick="downloadCsv()" id="csvBtn" style="display:none">Download CSV</button>
+    </div>
+
+    <div id="summary" class="summary"></div>
+    <div id="results"></div>
+  </div>
+</div>
+
+<script>
+// ========= PASSWORD GATE =========
+// NOT real security - visible in page source, and deliberately not framed as one.
+// This is just a shared phrase to keep casual/accidental visitors from landing here.
+// Change it below whenever you like.
+const ACCESS_PHRASE = "Delivery";
+
+function tryUnlock() {
+  const phrase = document.getElementById('gate_pw').value;
+  if (phrase === ACCESS_PHRASE) {
+    sessionStorage.setItem('unlocked', '1');
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+  } else {
+    document.getElementById('gate_err').style.display = 'block';
+  }
+}
+if (sessionStorage.getItem('unlocked') === '1') {
+  document.getElementById('gate').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+}
+
+// ========= COUNTRY LIST =========
+const COUNTRIES = [
+  ["NONE", "No default - require + on every number"],
+  ["GB", "United Kingdom"], ["US", "United States"], ["CA", "Canada"],
+  ["IE", "Ireland"], ["AU", "Australia"], ["NZ", "New Zealand"],
+  ["FR", "France"], ["DE", "Germany"], ["ES", "Spain"], ["IT", "Italy"],
+  ["NL", "Netherlands"], ["BE", "Belgium"], ["PT", "Portugal"], ["CH", "Switzerland"],
+  ["AT", "Austria"], ["SE", "Sweden"], ["NO", "Norway"], ["DK", "Denmark"],
+  ["FI", "Finland"], ["PL", "Poland"], ["IN", "India"], ["PK", "Pakistan"],
+  ["BD", "Bangladesh"], ["CN", "China"], ["JP", "Japan"], ["KR", "South Korea"],
+  ["SG", "Singapore"], ["HK", "Hong Kong"], ["AE", "United Arab Emirates"],
+  ["SA", "Saudi Arabia"], ["ZA", "South Africa"], ["NG", "Nigeria"], ["KE", "Kenya"],
+  ["BR", "Brazil"], ["MX", "Mexico"], ["AR", "Argentina"], ["PH", "Philippines"],
+  ["ID", "Indonesia"], ["MY", "Malaysia"], ["TH", "Thailand"], ["VN", "Vietnam"]
+];
+const sel = document.getElementById('defaultCountry');
+COUNTRIES.forEach(([code, name]) => {
+  const opt = document.createElement('option');
+  opt.value = code;
+  opt.textContent = code === "NONE" ? name : `${name} (${code})`;
+  sel.appendChild(opt);
+});
+sel.value = "GB";
+
+// ========= VALIDATION =========
+function splitRaw(raw) {
+  return raw.split(/[,\n;\t]+/).map(s => s.trim()).filter(Boolean);
+}
+
+function normalizeAndCheck(raw, defaultCountry) {
+  let num = raw.trim();
+  if (num.startsWith("00")) num = "+" + num.slice(2);
+
+  // Attempt 1: assume the leading digits ARE a country calling code, just missing "+".
+  // No real calling code starts with 0, so this naturally fails (and falls through)
+  // for numbers typed in local/national format with a leading trunk 0.
+  const withPlus = num.startsWith("+") ? num : "+" + num;
+  try {
+    const asInternational = libphonenumber.parsePhoneNumberFromString(withPlus);
+    if (asInternational && asInternational.isValid()) {
+      return { valid: true, e164: asInternational.number };
+    }
+  } catch (e) { /* fall through */ }
+
+  // Attempt 2: not already a "+" input, and not a valid international guess -
+  // treat as a national number in the selected default country.
+  if (defaultCountry !== "NONE" && !num.startsWith("+")) {
+    try {
+      const asNational = libphonenumber.parsePhoneNumberFromString(num, defaultCountry);
+      if (asNational && asNational.isValid()) {
+        return { valid: true, e164: asNational.number };
+      }
+    } catch (e) { /* fall through */ }
+  }
+
+  return { valid: false, e164: null };
+}
+
+let lastResults = [];
+
+function runValidation() {
+  const raw = document.getElementById('numbers').value;
+  const defaultCountry = document.getElementById('defaultCountry').value;
+  const numbers = splitRaw(raw);
+
+  lastResults = numbers.map(n => {
+    const { valid, e164 } = normalizeAndCheck(n, defaultCountry);
+    return { input: n, e164: e164 || "", status: valid ? "valid" : "invalid" };
+  });
+
+  const validCount = lastResults.filter(r => r.status === "valid").length;
+  const invalidCount = lastResults.length - validCount;
+
+  renderResults(lastResults, validCount, invalidCount);
+  document.getElementById('csvBtn').style.display = lastResults.length ? 'inline-block' : 'none';
+}
+
+function renderResults(results, validCount, invalidCount) {
+  document.getElementById('summary').textContent =
+    `Total: ${results.length}  •  Valid: ${validCount}  •  Invalid: ${invalidCount}`;
+
+  let html = "<table><tr><th>Input</th><th>Normalized (E.164)</th><th>Status</th></tr>";
+  results.forEach(r => {
+    const cls = r.status === "valid" ? "valid" : "invalid";
+    const symbol = r.status === "valid" ? "✅" : "❌";
+    html += `<tr><td>${escapeHtml(r.input)}</td><td>${escapeHtml(r.e164)}</td><td class="${cls}">${symbol} ${r.status.toUpperCase()}</td></tr>`;
+  });
+  html += "</table>";
+  document.getElementById('results').innerHTML = html;
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ========= CSV DOWNLOAD =========
+function downloadCsv() {
+  let csv = "input,e164,status\n";
+  lastResults.forEach(r => {
+    csv += `"${r.input.replace(/"/g, '""')}","${r.e164}","${r.status}"\n`;
+  });
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = "validation_results.csv";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
